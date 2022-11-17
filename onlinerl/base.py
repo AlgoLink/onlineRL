@@ -1,10 +1,10 @@
 import random
 
-class Agent:
 
-    def __init__(self, actions, alpha = 0.4, gamma=0.9, random_seed=0, model_db= None):
+class Agent:
+    def __init__(self, actions, alpha=0.4, gamma=0.9, random_seed=0, model_db=None):
         """
-        The Q-values/Sarsa/Expected Sarsa will be stored in a dictionary. Each key will be of the format: ((x, y), a). 
+        The Q-values/Sarsa/Expected Sarsa will be stored in a dictionary. Each key will be of the format: ((x, y), a).
         params:
             actions (list): A list of all the possible action values.
             alpha (float): step size
@@ -25,6 +25,7 @@ class Agent:
             action (int): an integer for the action
         """
         raise NotImplementedError("This method must be implemented.")
+
     def act(self, state, epsilon=0.1):
         raise NotImplementedError("This method must be implemented.")
 
@@ -33,6 +34,7 @@ class Agent:
         Q-Learning update
         """
         raise NotImplementedError("This method must be implemented.")
+
     def greedy_action_selection(self, state):
         """
         Selects action with the highest Q-value for the given state.

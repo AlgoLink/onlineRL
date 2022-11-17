@@ -18,6 +18,7 @@ ENV_ID_RE = re.compile(
     r"^(?:(?P<namespace>[\w:-]+)\/)?(?:(?P<name>[\w:.-]+?))(?:-v(?P<version>\d+))?$"
 )
 
+
 def load(name: str) -> callable:
     """Loads an environment with name and returns an environment creation function
     Args:
@@ -56,6 +57,7 @@ def parse_env_id(id: str) -> Tuple[Optional[str], str, Optional[int]]:
         version = int(version)
 
     return namespace, name, version
+
 
 def get_env_id(ns: Optional[str], name: str, version: Optional[int]) -> str:
     """Get the full env ID given a name and (optional) version and namespace. Inverse of :meth:`parse_env_id`.
