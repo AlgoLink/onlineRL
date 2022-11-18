@@ -12,7 +12,14 @@ logger = get_logger(__name__)
 
 class QAgent(Agent):
     def __init__(
-        self, actions, alpha=0.4, gamma=0.9, random_seed=0, model_db=None, score_db=None
+        self,
+        actions,
+        alpha=0.4,
+        gamma=0.9,
+        random_seed=0,
+        model_db=None,
+        score_db=None,
+        his_db=None,
     ):
         """
         The Q-values will be stored in a dictionary. Each key will be of the format: ((x, y), a).
@@ -23,6 +30,7 @@ class QAgent(Agent):
         """
         self._model_db = model_db
         self._score_db = score_db
+        self._his_db = his_db
         self.actions = actions
         self.alpha = alpha
         self.gamma = gamma
@@ -56,18 +64,27 @@ class QAgent(Agent):
 
         return action
 
-    def learn(self, state, action, reward, next_state, model_id=None):
+    def learn(
+        self, state, action, reward, next_state, model_id=None, reward_type="avg"
+    ):
         """
         Q-Learning update
         """
         model_key = f"{model_id}:qvalue"
         score_key = f"{model_id}:{state}:Qscore"
+
         _Q_dict = self._model_db.get(model_key)
         if _Q_dict is None:
             Q_dict = {}
         else:
             Q_dict = pickle.loads(_Q_dict)
 
+        if reward_type == "avg":
+            reward = self.reward_action(
+                state, action, reward=reward, model_id=model_id, init_model="no"
+            )
+        else:
+            reward = float(reward)
         q_next = self.get_Q_value(
             Q_dict, state=next_state, action=self.greedy_action_selection(next_state)[0]
         )
@@ -114,3 +131,40 @@ class QAgent(Agent):
             self.actions, size=topN, replace=False, p=None
         ).tolist()
         return action_list
+
+    def getNextState(self, cur_state, action):
+        pass
+
+    def reward_action(self, state, action, reward=None, model_id=None, init_model="no"):
+
+        success_key = f"{model_id}:{state}:{action}:successes"
+        key_tries = f"{model_id}:{state}:{action}:tries"
+
+        if reward is None:
+            reward = 1.0
+        reward_his = self._his_db.get(success_key)
+        if reward_his is None:
+            _reward = 0.0
+        else:
+            _reward = float(reward_his)
+        _reward += reward
+        self._his_db.set(success_key, str(_reward))
+
+        state_action_tries = self._his_db.get(key_tries)
+        if state_action_tries is None:
+            state_action_tries = 1
+        else:
+            state_action_tries = int(state_action_tries)
+
+        if init_model == "yes":
+            # 初始化模型时默认曝光
+            self.add_action_tries(state, action, model_id)
+
+        self._his_db.set(success_key, str(_reward))
+
+        return None if state_action_tries == 0 else _reward / state_action_tries
+
+    def add_action_tries(self, state: str, action: str, reward, model_id: str) -> None:
+        key_tries = f"{model_id}:{state}:{action}:tries"
+        action_tries = self._his_db.incr(key_tries)
+        return action_tries
